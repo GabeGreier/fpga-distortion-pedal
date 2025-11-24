@@ -45,3 +45,16 @@ endmodule
 - I need to order a 1/4" TS to 3.5mm TRS adapter.
 
 -----
+
+## Entry 3 — Starting code for passthrough
+**Date:** Nov 24, 2025  
+**Time:** 3:46 PM 
+
+### Summary  
+Starting to work on and figure out clean passthrough using the DE2-115 codec. 
+
+### Work Completed
+
+
+
+-----
