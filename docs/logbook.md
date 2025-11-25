@@ -56,10 +56,11 @@ Starting to work on and figure out clean passthrough using the DE2-115 codec.
 ### Notes
 - FPGA board needs a master clock, and setting one to 50 Mhz seems to be good practice
 - We are going to need to generate a master clock, configure codec, i2s reciever,and then i2s transmitter in audio_interface.v
-- Adding modules online / ai to complete the actual components adc and dac codec etc.
+- Adding modules online / ai to complete the actual components adc and dac codec etc. // Updated couldnt find them on the internet. Using AI to generate the required files
 
 ### Work Completed
-- Created passthrough.v, starting work on it
+- Created passthrough.v
 - Created audio_interface.v
+- Added audio_in, audio_out, and wm8731 module files. Used AI to recreate these as I couldnt find them on the web.
 
 -----
