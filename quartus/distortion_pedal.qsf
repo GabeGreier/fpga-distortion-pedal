@@ -1,0 +1,84 @@
+# ============================================================
+# Project: FPGA Distortion Pedal
+# Board:   Terasic DE2-115 (Cyclone IV EP4CE115F29C7)
+# File:    distortion_pedal.qsf
+#
+# Notes:
+# - This project implements clean audio passthrough using the
+#   WM8731 codec on the DE2-115 development board.
+# - All HDL source files are located in ../src/
+# - The PLL (pll_audio) is generated through the IP Catalog
+#   and imported via its QIP file.
+# ============================================================
+
+
+# -------------------------
+# Target Device
+# -------------------------
+set_global_assignment -name FAMILY "Cyclone IV E"
+set_global_assignment -name DEVICE EP4CE115F29C7
+
+
+# -------------------------
+# Top-Level Entity
+# -------------------------
+set_global_assignment -name TOP_LEVEL_ENTITY passthrough
+
+
+# -------------------------
+# HDL Source Files
+# Relative paths (.. from /quartus/ directory)
+# -------------------------
+set_global_assignment -name VERILOG_FILE ../src/passthrough.v
+set_global_assignment -name VERILOG_FILE ../src/audio_interface.v
+set_global_assignment -name VERILOG_FILE ../src/audio/audio_in.v
+set_global_assignment -name VERILOG_FILE ../src/audio/audio_out.v
+set_global_assignment -name VERILOG_FILE ../src/audio/wm8731_config.v
+
+
+# -------------------------
+# PLL (generated separately)
+# -------------------------
+set_global_assignment -name QIP_FILE pll_audio.qip
+
+
+# -------------------------
+# Pin Assignments
+# (Based on DE2-115 User Manual pinout table)
+# -------------------------
+
+# 50 MHz reference clock
+set_location_assignment PIN_Y2 -to CLOCK_50
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to CLOCK_50
+
+# Audio ADC (input signals)
+set_location_assignment PIN_C2 -to AUD_ADCLRCK
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to AUD_ADCLRCK
+
+set_location_assignment PIN_D2 -to AUD_ADCDAT
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to AUD_ADCDAT
+
+set_location_assignment PIN_F2 -to AUD_BCLK
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to AUD_BCLK
+
+# Audio DAC (output signals)
+set_location_assignment PIN_E3 -to AUD_DACLRCK
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to AUD_DACLRCK
+
+set_location_assignment PIN_D1 -to AUD_DACDAT
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to AUD_DACDAT
+
+set_location_assignment PIN_E1 -to AUD_XCK
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to AUD_XCK
+
+# I2C interface for codec configuration
+set_location_assignment PIN_B7 -to I2C_SCLK
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to I2C_SCLK
+
+set_location_assignment PIN_A8 -to I2C_SDAT
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to I2C_SDAT
+
+
+# ============================================================
+# End of File
+# ============================================================

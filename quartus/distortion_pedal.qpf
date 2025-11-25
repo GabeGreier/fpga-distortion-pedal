@@ -1,0 +1,6 @@
+// ============================================================
+// Quartus Project File for FPGA Distortion Pedal
+// ============================================================
+
+QUARTUS_VERSION = "22.1"
+PROJECT_REVISION = "distortion_pedal"
