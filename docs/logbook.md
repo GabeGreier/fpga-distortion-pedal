@@ -64,3 +64,13 @@ Starting to work on and figure out clean passthrough using the DE2-115 codec.
 - Added audio_in, audio_out, and wm8731 module files. Used AI to recreate these as I couldnt find them on the web.
 
 -----
+
+## Entry 4 — Achieved Clean Passthrough
+**Date:** Jan 28, 2026  
+**Time:** 9:19 AM 
+
+### Summary  
+Picked up project again and reviewed original plans. Tested out passthrough and was successful with clean play through. Going to implement three levels of distortion / clipping soon.
+This will also contain a switch type module to use the FPGA boards switches to control the amount of distortion.
+
+ie 00 will be clean, 01 will be minimal, 10 will be normal, 11 will be heavy distortion.
