@@ -34,6 +34,9 @@ set_global_assignment -name VERILOG_FILE ../src/audio_interface.v
 set_global_assignment -name VERILOG_FILE ../src/audio/audio_in.v
 set_global_assignment -name VERILOG_FILE ../src/audio/audio_out.v
 set_global_assignment -name VERILOG_FILE ../src/audio/wm8731_config.v
+set_global_assignment -name VERILOG_FILE ../src/control/mode_select.v
+set_global_assignment -name VERILOG_FILE ../src/dsp/distortion.v
+set_global_assignment -name VERILOG_FILE ../src/ui/lcd_hd44780.v
 
 
 # -------------------------
@@ -77,6 +80,27 @@ set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to I2C_SCLK
 
 set_location_assignment PIN_A8 -to I2C_SDAT
 set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to I2C_SDAT
+
+# Switch pins for preset control
+set_lcoation_assignment PIN_AB28 -to SW[0]
+set_location_assignment PIN_AC28 -to SW[1]
+
+# LCD data bus
+set_location_assignment PIN_L3 -to LCD_DATA[0]
+set_location_assignment PIN_L1 -to LCD_DATA[1]
+set_location_assignment PIN_L2 -to LCD_DATA[2]
+set_location_assignment PIN_K7 -to LCD_DATA[3]
+set_location_assignment PIN_K1 -to LCD_DATA[4]
+set_location_assignment PIN_K2 -to LCD_DATA[5]
+set_location_assignment PIN_M3 -to LCD_DATA[6]
+set_location_assignment PIN_M5 -to LCD_DATA[7]
+
+# LCD control
+set_location_assignment PIN_L4 -to LCD_EN
+set_location_assignment PIN_M1 -to LCD_RW
+set_location_assignment PIN_M2 -to LCD_RS
+set_location_assignment PIN_L5 -to LCD_ON
+set_location_assignment PIN_L6 -to LCD_BLON
 
 
 # ============================================================

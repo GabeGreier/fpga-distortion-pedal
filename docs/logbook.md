@@ -74,3 +74,12 @@ Picked up project again and reviewed original plans. Tested out passthrough and 
 This will also contain a switch type module to use the FPGA boards switches to control the amount of distortion.
 
 ie 00 will be clean, 01 will be minimal, 10 will be normal, 11 will be heavy distortion.
+
+## Entry 5 — Adding LCD Screen along with switch controller
+**Date:** Jan 30, 2026  
+**Time:** 7:07 PM 
+
+### Summary  
+Adding the primary switch module to handle distorion level preset from 00, 01, 10, 11 respectively. Where 00, is a clean passthrough. In addition, setting up an LCD screen module to
+display which mode we are on as well as the project name. This will ehanced user experience and make it easier to know when it is working. I will also implement blank stubs for each of the distortion
+modules. 
