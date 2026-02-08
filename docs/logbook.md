@@ -82,4 +82,31 @@ ie 00 will be clean, 01 will be minimal, 10 will be normal, 11 will be heavy dis
 ### Summary  
 Adding the primary switch module to handle distorion level preset from 00, 01, 10, 11 respectively. Where 00, is a clean passthrough. In addition, setting up an LCD screen module to
 display which mode we are on as well as the project name. This will ehanced user experience and make it easier to know when it is working. I will also implement blank stubs for each of the distortion
-modules. 
+modules. Going to have the LCD screensetup with similar code to found in our in class labs, as well as use AI to automate this file. 
+
+### Decisions made
+- Two physical switches on the board to control distortion presets (00, 01, 10, 11) => (clean, light, normal, heavy)
+- Latch mode on LRCLK audio fram boundary to prevent a mid sample mode changes that can cause audible clicks
+
+### Distortion strategy
+- Use a piecewiuse non linearity which means soft clipping / compression curve
+- Structure: Pregain -> non linear shaping -> saturate back to 16-bit
+- Why choose piecewise: cheap in fpga, predictable, more amp like rather then pure hard clipping (sounds gross)
+
+### LCD Integration
+- LCD shows the project name and the current mode string with the help of AI.
+- LCD updates only when mode changes which in turn reduces bus activity and keeps code simple.
+
+## Entry 6 — Adding Core Distorion Module
+**Date:** Feb 1, 2026  
+**Time:** 10:01 AM 
+
+### Summary  
+Started coding the primary distortion module. Hopefully by end of today project will be ready for real testing in the lab with a guitar.
+
+## Entry 5 — Adding Core Distorion Module
+**Date:** Feb 8, 2026  
+**Time:** 1:10 PM 
+
+### Summary  
+Fixing LCD screen code. 

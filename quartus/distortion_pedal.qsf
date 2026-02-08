@@ -4,13 +4,12 @@
 # File:    distortion_pedal.qsf
 #
 # Notes:
-# - This project implements clean audio passthrough using the
-#   WM8731 codec on the DE2-115 development board.
-# - All HDL source files are located in ../src/
-# - The PLL (pll_audio) is generated through the IP Catalog
-#   and imported via its QIP file.
+# - Clean audio passthrough + distortion modes using the WM8731 codec
+# - SW[1:0] selects mode (00 clean, 01 light, 10 normal, 11 heavy)
+# - LCD displays project name + current mode
+# - HDL sources are in ../src/  (relative to /quartus/)
+# - PLL (pll_audio) imported via QIP
 # ============================================================
-
 
 # -------------------------
 # Target Device
@@ -18,36 +17,39 @@
 set_global_assignment -name FAMILY "Cyclone IV E"
 set_global_assignment -name DEVICE EP4CE115F29C7
 
-
 # -------------------------
 # Top-Level Entity
 # -------------------------
-set_global_assignment -name TOP_LEVEL_ENTITY passthrough
-
+set_global_assignment -name TOP_LEVEL_ENTITY distortion_pedal_top
 
 # -------------------------
 # HDL Source Files
-# Relative paths (.. from /quartus/ directory)
+# (relative paths from /quartus/)
 # -------------------------
+# Keep passthrough in project (optional, for reference)
 set_global_assignment -name VERILOG_FILE ../src/passthrough.v
+
+# Board top
+set_global_assignment -name VERILOG_FILE ../src/distortion_pedal_top.v
+
+# Audio plumbing
 set_global_assignment -name VERILOG_FILE ../src/audio_interface.v
 set_global_assignment -name VERILOG_FILE ../src/audio/audio_in.v
 set_global_assignment -name VERILOG_FILE ../src/audio/audio_out.v
 set_global_assignment -name VERILOG_FILE ../src/audio/wm8731_config.v
+
+# Control + DSP + UI
 set_global_assignment -name VERILOG_FILE ../src/control/mode_select.v
 set_global_assignment -name VERILOG_FILE ../src/dsp/distortion.v
 set_global_assignment -name VERILOG_FILE ../src/ui/lcd_hd44780.v
-
 
 # -------------------------
 # PLL (generated separately)
 # -------------------------
 set_global_assignment -name QIP_FILE pll_audio.qip
 
-
 # -------------------------
 # Pin Assignments
-# (Based on DE2-115 User Manual pinout table)
 # -------------------------
 
 # 50 MHz reference clock
@@ -82,8 +84,11 @@ set_location_assignment PIN_A8 -to I2C_SDAT
 set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to I2C_SDAT
 
 # Switch pins for preset control
-set_lcoation_assignment PIN_AB28 -to SW[0]
+set_location_assignment PIN_AB28 -to SW[0]
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to SW[0]
+
 set_location_assignment PIN_AC28 -to SW[1]
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to SW[1]
 
 # LCD data bus
 set_location_assignment PIN_L3 -to LCD_DATA[0]
@@ -95,13 +100,30 @@ set_location_assignment PIN_K2 -to LCD_DATA[5]
 set_location_assignment PIN_M3 -to LCD_DATA[6]
 set_location_assignment PIN_M5 -to LCD_DATA[7]
 
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to LCD_DATA[0]
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to LCD_DATA[1]
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to LCD_DATA[2]
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to LCD_DATA[3]
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to LCD_DATA[4]
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to LCD_DATA[5]
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to LCD_DATA[6]
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to LCD_DATA[7]
+
 # LCD control
 set_location_assignment PIN_L4 -to LCD_EN
-set_location_assignment PIN_M1 -to LCD_RW
-set_location_assignment PIN_M2 -to LCD_RS
-set_location_assignment PIN_L5 -to LCD_ON
-set_location_assignment PIN_L6 -to LCD_BLON
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to LCD_EN
 
+set_location_assignment PIN_M1 -to LCD_RW
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to LCD_RW
+
+set_location_assignment PIN_M2 -to LCD_RS
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to LCD_RS
+
+set_location_assignment PIN_L5 -to LCD_ON
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to LCD_ON
+
+set_location_assignment PIN_L6 -to LCD_BLON
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to LCD_BLON
 
 # ============================================================
 # End of File

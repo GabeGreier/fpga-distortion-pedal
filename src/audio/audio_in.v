@@ -8,7 +8,7 @@ module audio_in(
 
     reg [15:0] shift_reg = 0;
     reg [4:0]  bit_index = 0;
-    reg        current_channel = 0; // 0 = left, 1 = right
+    reg        lrclk_prev = 0; // Fixed: Track previous LRCLK state for reliable edge detection
 
     // Shift incoming serial data on rising edge of BCLK
     always @(posedge BCLK) begin
@@ -16,16 +16,21 @@ module audio_in(
         bit_index <= bit_index + 1;
     end
 
-    // LRCLK toggles at start of each channel
-    always @(posedge LRCLK) begin
-        // LRCLK = 0 → left channel, LRCLK = 1 → right channel
-        current_channel <= LRCLK;
-        bit_index <= 0;
-
-        if (LRCLK == 0)
-            left <= shift_reg;      // capture left
-        else
-            right <= shift_reg;     // capture right
+    // Fixed: Detect LRCLK edges by comparing previous and current state
+    // LRCLK rising edge = left channel, falling edge = right channel
+    always @(posedge BCLK) begin
+        lrclk_prev <= LRCLK;
+        
+        // Detect LRCLK rising edge (left channel)
+        if (!lrclk_prev && LRCLK) begin
+            left <= shift_reg;
+            bit_index <= 0;
+        end
+        // Detect LRCLK falling edge (right channel)
+        else if (lrclk_prev && !LRCLK) begin
+            right <= shift_reg;
+            bit_index <= 0;
+        end
     end
 
 endmodule
