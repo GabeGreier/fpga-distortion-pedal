@@ -6,30 +6,33 @@ module audio_in(
     output reg signed [15:0] right
 );
 
-    reg [15:0] shift_reg = 0;
-    reg [4:0]  bit_index = 0;
-    reg        lrclk_prev = 0; // Fixed: Track previous LRCLK state for reliable edge detection
+    reg [15:0] shift_reg = 16'd0;
+    reg [4:0]  bit_index = 5'd0;
 
-    // Shift incoming serial data on rising edge of BCLK
-    always @(posedge BCLK) begin
-        shift_reg <= {shift_reg[14:0], ADCDAT};
-        bit_index <= bit_index + 1;
-    end
+    // Synchronize LRCLK into BCLK domain before edge detection.
+    reg lrclk_meta = 1'b0;
+    reg lrclk_sync = 1'b0;
+    reg lrclk_prev = 1'b0;
 
-    // Fixed: Detect LRCLK edges by comparing previous and current state
-    // LRCLK rising edge = left channel, falling edge = right channel
+    // Shift serial ADC data and capture full words at synchronized LRCLK edges.
     always @(posedge BCLK) begin
-        lrclk_prev <= LRCLK;
-        
-        // Detect LRCLK rising edge (left channel)
-        if (!lrclk_prev && LRCLK) begin
+        lrclk_meta <= LRCLK;
+        lrclk_sync <= lrclk_meta;
+        lrclk_prev <= lrclk_sync;
+        shift_reg  <= {shift_reg[14:0], ADCDAT};
+
+        // Detect synchronized LRCLK rising edge (left channel)
+        if (!lrclk_prev && lrclk_sync) begin
             left <= shift_reg;
-            bit_index <= 0;
+            bit_index <= 5'd0;
         end
-        // Detect LRCLK falling edge (right channel)
-        else if (lrclk_prev && !LRCLK) begin
+        // Detect synchronized LRCLK falling edge (right channel)
+        else if (lrclk_prev && !lrclk_sync) begin
             right <= shift_reg;
-            bit_index <= 0;
+            bit_index <= 5'd0;
+        end
+        else begin
+            bit_index <= bit_index + 5'd1;
         end
     end
 

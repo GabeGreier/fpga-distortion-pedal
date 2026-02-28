@@ -1,5 +1,6 @@
 module audio_interface(
     input CLOCK_50,  // main FPGA clock, must be 50 MHz
+    input reset,     // active-high reset for codec configuration
 
     // I2S interface
     input  AUD_ADCLRCK,
@@ -29,7 +30,7 @@ module audio_interface(
     // Configure WM8731 at startup
     wm8731_config codec_config (
         .clock(CLOCK_50),
-        .reset(1'b0),
+        .reset(reset),
 
         .I2C_SCLK(I2C_SCLK),
         .I2C_SDAT(I2C_SDAT)
