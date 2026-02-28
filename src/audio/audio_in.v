@@ -13,7 +13,7 @@ module audio_in(
     // Shift incoming serial data on rising edge of BCLK
     always @(posedge BCLK) begin
         shift_reg <= {shift_reg[14:0], ADCDAT};
-        bit_index <= bit_index + 1;
+        bit_index <= bit_index + 5'd1;
     end
 
     // Fixed: Detect LRCLK edges by comparing previous and current state
