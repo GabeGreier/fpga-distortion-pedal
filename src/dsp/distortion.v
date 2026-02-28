@@ -31,10 +31,10 @@ module distortion (
     function signed [15:0] sat16;
         input signed [31:0] x;
         begin
-            if (x > 32767)
-                sat16 = 32767;
-            else if (x < -32768)
-                sat16 = -32768;
+            if (x > 32'sd32767)
+                sat16 = 16'sd32767;
+            else if (x < -32'sd32768)
+                sat16 = -16'sd32768;
             else
                 sat16 = x[15:0];
         end
