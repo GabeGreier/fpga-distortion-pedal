@@ -40,13 +40,8 @@ module distortion_pedal_top(
     wire signed [15:0] adc_left, adc_right;
     wire signed [15:0] dac_left, dac_right;
 
-    // Sample switches in system clock domain so LCD updates even if codec clocks are absent.
-    wire [1:0] mode_sys;
-    mode_select u_mode_sys (
-        .clk(CLOCK_50),
-        .sw(SW),
-        .mode(mode_sys)
-    );
+    // Use raw switches for UI mode so LCD always reflects physical switch state.
+    wire [1:0] mode_sys = SW;
 
     // Synchronize mode into codec LRCLK domain for audio DSP use.
     reg [1:0] mode_lr_ff1, mode_lr_ff2;
