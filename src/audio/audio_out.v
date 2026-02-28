@@ -6,32 +6,33 @@ module audio_out(
     output reg          DACDAT       // serial output to codec
 );
 
-    reg [15:0] shift_reg = 0;
-    reg [4:0]  bit_index = 0;
-    reg        lrclk_prev = 0; // Fixed: Track previous LRCLK state for reliable edge detection
+    reg [15:0] shift_reg = 16'd0;
+    reg [4:0]  bit_index = 5'd0;
+    reg        lrclk_prev = 1'b0;
 
-    // Fixed: Detect LRCLK edges by comparing previous and current state
-    // LRCLK rising edge = load left, falling edge = load right
-    always @(posedge BCLK) begin
+    // Single clocked process to avoid multi-driver synthesis errors.
+    // Update data on BCLK falling edge so DAC sees stable value on rising edge.
+    always @(negedge BCLK) begin
         lrclk_prev <= LRCLK;
-        
+
         // Detect LRCLK rising edge (left channel)
         if (!lrclk_prev && LRCLK) begin
-            bit_index <= 0;
             shift_reg <= left;
+            bit_index <= 5'd0;
+            DACDAT    <= left[15];
         end
         // Detect LRCLK falling edge (right channel)
         else if (lrclk_prev && !LRCLK) begin
-            bit_index <= 0;
             shift_reg <= right;
+            bit_index <= 5'd0;
+            DACDAT    <= right[15];
         end
-    end
-
-    // Shift out MSB first on falling edge of BCLK
-    always @(negedge BCLK) begin
-        DACDAT <= shift_reg[15];
-        shift_reg <= {shift_reg[14:0], 1'b0};
-        bit_index <= bit_index + 1;
+        // Shift out MSB first between channel boundaries.
+        else begin
+            DACDAT    <= shift_reg[15];
+            shift_reg <= {shift_reg[14:0], 1'b0};
+            bit_index <= bit_index + 5'd1;
+        end
     end
 
 endmodule
