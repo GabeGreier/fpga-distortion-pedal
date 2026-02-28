@@ -48,7 +48,8 @@ set_global_assignment -name VERILOG_FILE ../src/ui/lcd_hd44780.v
 # PLL (generated separately)
 # -------------------------
 set_global_assignment -name QIP_FILE pll_audio.qip
-set_global_assignment -name SDC_FILE distortion_pedal.sdc
+set_global_assignment -name SDC_FILE ./distortion_pedal.sdc
+set_global_assignment -name SDC_FILE ../distortion_pedal.sdc
 
 # -------------------------
 # Pin Assignments
