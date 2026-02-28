@@ -20,6 +20,7 @@ module lcd_hd44780 (
     localparam integer WAIT_40US   = 2_000;     // 40us
     localparam integer WAIT_2MS    = 100_000;   // 2ms
     localparam integer E_PULSE     = 50;        // 1us-ish pulse (50 cycles @ 50MHz)
+    localparam integer REFRESH_100MS = 5_000_000; // periodic line-2 rewrite @ 50MHz
 
     // Main states
     localparam [3:0]
@@ -46,6 +47,7 @@ module lcd_hd44780 (
 
     reg [5:0]  char_idx;          // 0..31
     reg [1:0]  last_mode;
+    reg [22:0] refresh_cnt;
 
     // ------------------------------------------------------------
     // Build characters for LCD (pure Verilog function style)
@@ -146,7 +148,7 @@ module lcd_hd44780 (
     // Default outputs / constants
     always @* begin
         LCD_ON   = 1'b1;   // keep LCD powered
-        LCD_BLON = 1'b0;   // not used (no backlight on many DE2-115 LCDs)
+        LCD_BLON = 1'b1;   // keep backlight enabled
     end
 
     always @(posedge clk) begin
@@ -167,6 +169,7 @@ module lcd_hd44780 (
             post_wait    <= 32'd0;
             send_is_data <= 1'b0;
             send_byte    <= 8'h00;
+            refresh_cnt  <= 23'd0;
 
         end else begin
             case (state)
@@ -238,10 +241,16 @@ module lcd_hd44780 (
                     end
                 end
 
-                // refresh line 2 only when mode changes
+                // Refresh line 2 on mode changes and periodically to keep UI alive.
                 ST_IDLE: begin
                     if (mode != last_mode) begin
+                        refresh_cnt <= 23'd0;
                         state <= ST_ADDR_LINE2;
+                    end else if (refresh_cnt >= REFRESH_100MS-1) begin
+                        refresh_cnt <= 23'd0;
+                        state <= ST_ADDR_LINE2;
+                    end else begin
+                        refresh_cnt <= refresh_cnt + 23'd1;
                     end
                 end
 
