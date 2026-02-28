@@ -8,21 +8,26 @@ module audio_in(
 
     reg [15:0] shift_reg = 16'd0;
     reg [4:0]  bit_index = 5'd0;
-    reg        lrclk_prev = 1'b0;
 
-    // Single process avoids multiple procedural drivers on bit_index.
-    // Shift serial ADC data and capture full words at LRCLK boundaries.
+    // Synchronize LRCLK into BCLK domain before edge detection.
+    reg lrclk_meta = 1'b0;
+    reg lrclk_sync = 1'b0;
+    reg lrclk_prev = 1'b0;
+
+    // Shift serial ADC data and capture full words at synchronized LRCLK edges.
     always @(posedge BCLK) begin
-        lrclk_prev <= LRCLK;
+        lrclk_meta <= LRCLK;
+        lrclk_sync <= lrclk_meta;
+        lrclk_prev <= lrclk_sync;
         shift_reg  <= {shift_reg[14:0], ADCDAT};
 
-        // Detect LRCLK rising edge (left channel)
-        if (!lrclk_prev && LRCLK) begin
+        // Detect synchronized LRCLK rising edge (left channel)
+        if (!lrclk_prev && lrclk_sync) begin
             left <= shift_reg;
             bit_index <= 5'd0;
         end
-        // Detect LRCLK falling edge (right channel)
-        else if (lrclk_prev && !LRCLK) begin
+        // Detect synchronized LRCLK falling edge (right channel)
+        else if (lrclk_prev && !lrclk_sync) begin
             right <= shift_reg;
             bit_index <= 5'd0;
         end
