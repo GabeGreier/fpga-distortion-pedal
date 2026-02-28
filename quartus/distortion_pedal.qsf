@@ -21,6 +21,7 @@ set_global_assignment -name DEVICE EP4CE115F29C7
 # Top-Level Entity
 # -------------------------
 set_global_assignment -name TOP_LEVEL_ENTITY distortion_pedal_top
+set_global_assignment -name NUM_PARALLEL_PROCESSORS 4
 
 # -------------------------
 # HDL Source Files
@@ -47,6 +48,7 @@ set_global_assignment -name VERILOG_FILE ../src/ui/lcd_hd44780.v
 # PLL (generated separately)
 # -------------------------
 set_global_assignment -name QIP_FILE pll_audio.qip
+set_global_assignment -name SDC_FILE distortion_pedal.sdc
 
 # -------------------------
 # Pin Assignments
