@@ -85,6 +85,7 @@ module distortion_pedal_top(
     // Audio interface (codec config + I2S in/out)
     audio_interface audio_inst (
         .CLOCK_50(CLOCK_50),
+        .reset(!reset_n),
 
         .AUD_ADCLRCK(AUD_ADCLRCK),
         .AUD_ADCDAT(AUD_ADCDAT),

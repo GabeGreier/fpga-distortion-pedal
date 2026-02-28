@@ -30,7 +30,7 @@ set_global_assignment -name TOP_LEVEL_ENTITY distortion_pedal_top
 set_global_assignment -name VERILOG_FILE ../src/passthrough.v
 
 # Board top
-set_global_assignment -name VERILOG_FILE ../src/distortion_pedal_top.v
+set_global_assignment -name VERILOG_FILE ../distortion_pedal_top.v
 
 # Audio plumbing
 set_global_assignment -name VERILOG_FILE ../src/audio_interface.v
