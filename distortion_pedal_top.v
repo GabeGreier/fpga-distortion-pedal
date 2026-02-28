@@ -43,11 +43,11 @@ module distortion_pedal_top(
     // Use raw switches for UI mode so LCD always reflects physical switch state.
     wire [1:0] mode_sys = SW;
 
-    // Synchronize mode into codec LRCLK domain for audio DSP use.
-    reg [1:0] mode_lr_ff1, mode_lr_ff2;
-    always @(posedge AUD_ADCLRCK) begin
-        mode_lr_ff1 <= mode_sys;
-        mode_lr_ff2 <= mode_lr_ff1;
+    // Synchronize mode into audio BCLK domain for DSP use.
+    reg [1:0] mode_bclk_ff1, mode_bclk_ff2;
+    always @(posedge AUD_BCLK) begin
+        mode_bclk_ff1 <= mode_sys;
+        mode_bclk_ff2 <= mode_bclk_ff1;
     end
 
     // Extra sync stage for LCD path.
