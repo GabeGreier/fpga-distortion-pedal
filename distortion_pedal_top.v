@@ -40,32 +40,38 @@ module distortion_pedal_top(
     wire signed [15:0] adc_left, adc_right;
     wire signed [15:0] dac_left, dac_right;
 
-    // Mode latch (LRCLK domain)
-    wire [1:0] mode_lr;
-
-    mode_select u_mode (
-        .lrclk(AUD_ADCLRCK),
+    // Sample switches in system clock domain so LCD updates even if codec clocks are absent.
+    wire [1:0] mode_sys;
+    mode_select u_mode_sys (
+        .clk(CLOCK_50),
         .sw(SW),
-        .mode(mode_lr)
+        .mode(mode_sys)
     );
 
-    // Sync mode into CLOCK_50 for LCD
+    // Synchronize mode into codec LRCLK domain for audio DSP use.
+    reg [1:0] mode_lr_ff1, mode_lr_ff2;
+    always @(posedge AUD_ADCLRCK) begin
+        mode_lr_ff1 <= mode_sys;
+        mode_lr_ff2 <= mode_lr_ff1;
+    end
+
+    // Extra sync stage for LCD path.
     reg [1:0] mode_ff1, mode_ff2;
     always @(posedge CLOCK_50) begin
-        mode_ff1 <= mode_lr;
+        mode_ff1 <= mode_sys;
         mode_ff2 <= mode_ff1;
     end
 
     // Distortion DSP (stereo)
     distortion u_dist_L (
         .in_sample(adc_left),
-        .mode(mode_lr),
+        .mode(mode_lr_ff2),
         .out_sample(dac_left)
     );
 
     distortion u_dist_R (
         .in_sample(adc_right),
-        .mode(mode_lr),
+        .mode(mode_lr_ff2),
         .out_sample(dac_right)
     );
 
@@ -85,6 +91,7 @@ module distortion_pedal_top(
     // Audio interface (codec config + I2S in/out)
     audio_interface audio_inst (
         .CLOCK_50(CLOCK_50),
+        .reset(!reset_n),
 
         .AUD_ADCLRCK(AUD_ADCLRCK),
         .AUD_ADCDAT(AUD_ADCDAT),
