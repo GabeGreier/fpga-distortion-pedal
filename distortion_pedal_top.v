@@ -60,13 +60,13 @@ module distortion_pedal_top(
     // Distortion DSP (stereo)
     distortion u_dist_L (
         .in_sample(adc_left),
-        .mode(mode_bclk_ff2),
+        .mode(mode_lr_ff2),
         .out_sample(dac_left)
     );
 
     distortion u_dist_R (
         .in_sample(adc_right),
-        .mode(mode_bclk_ff2),
+        .mode(mode_lr_ff2),
         .out_sample(dac_right)
     );
 
