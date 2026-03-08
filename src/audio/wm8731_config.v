@@ -46,9 +46,9 @@ module wm8731_config(
         // Power down control: all ON (0)
         rom[1]  = {7'h06, 9'h000};
 
-        // Line input volumes: moderate level to keep dynamics while avoiding hard clipping.
-        rom[2]  = {7'h00, 9'h012};   // Left Line In
-        rom[3]  = {7'h01, 9'h012};   // Right Line In
+        // Line input volumes: slightly reduced to cut idle hiss from floating/unplugged input.
+        rom[2]  = {7'h00, 9'h010};   // Left Line In
+        rom[3]  = {7'h01, 9'h010};   // Right Line In
 
         // Headphone/line out volume
         rom[4]  = {7'h02, 9'h079};   // Left HP Out
