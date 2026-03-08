@@ -1,6 +1,6 @@
 // ================================================
 // FPGA Distortion block
-// - Mode 00: clean passthrough (true bypass)
+// - Mode 00: clean passthrough + gate
 // - Mode 01: light soft clip
 // - Mode 10: normal clip
 // - Mode 11: heavy clip
@@ -51,60 +51,64 @@ module distortion (
         sgn      = 32'sd1;
         a        = 32'd0;
         d        = 32'd0;
-        gate_thr = 32'd0;
+        gate_thr = 32'd256;
 
-        // CLEAN must be true bypass so it does not sound pre-distorted.
-        if (mode == 2'b00) begin
-            out_sample = in_sample;
+        // Mode-dependent thresholds so high-gain modes don't amplify idle ADC noise.
+        case (mode)
+            2'b00: gate_thr = 32'd256;
+            2'b01: gate_thr = 32'd512;
+            2'b10: gate_thr = 32'd768;
+            default: gate_thr = 32'd1024;
+        endcase
+
+        if (abs32(x) < gate_thr) begin
+            out_sample = 16'sd0;
         end else begin
-            // Mode-dependent gate for distorted modes only, to suppress idle hiss.
             case (mode)
-                2'b01: gate_thr = 32'd384;
-                2'b10: gate_thr = 32'd640;
-                default: gate_thr = 32'd896;
-            endcase
-
-            if (abs32(x) < gate_thr) begin
-                out_sample = 16'sd0;
-            end else begin
-                case (mode)
-                    // LIGHT
-                    2'b01: begin
-                        x_gain = x <<< 1;
-                        thr    = 32'sd21000;
-                    end
-
-                    // NORMAL
-                    2'b10: begin
-                        x_gain = x <<< 2;
-                        thr    = 32'sd14500;
-                    end
-
-                    // HEAVY
-                    default: begin
-                        x_gain = x <<< 3;
-                        thr    = 32'sd9500;
-                    end
-                endcase
-
-                if (x_gain < 0)
-                    sgn = -32'sd1;
-                else
-                    sgn = 32'sd1;
-
-                a = abs32(x_gain);
-
-                if (a <= thr[31:0]) begin
-                    y = x_gain;
-                end else if (a <= (thr <<< 1)) begin
-                    d = a - thr[31:0];
-                    y = sgn * (thr + (d >>> 2));
-                end else begin
-                    y = sgn * (thr + (thr >>> 2));
+                // CLEAN
+                2'b00: begin
+                    x_gain = x;
+                    thr    = 32'sd32767;
                 end
 
-                out_sample = sat16(y);
+                // LIGHT
+                2'b01: begin
+                    x_gain = x <<< 1;
+                    thr    = 32'sd20000;
+                end
+
+                // NORMAL
+                2'b10: begin
+                    x_gain = x <<< 2;
+                    thr    = 32'sd13500;
+                end
+
+                // HEAVY
+                default: begin
+                    x_gain = x <<< 3;
+                    thr    = 32'sd9000;
+                end
+            endcase
+
+            if (x_gain < 0)
+                sgn = -32'sd1;
+            else
+                sgn = 32'sd1;
+
+            a = abs32(x_gain);
+
+            if (mode == 2'b00) begin
+                y = x_gain;
+            end else if (a <= thr[31:0]) begin
+                y = x_gain;
+            end else if (a <= (thr <<< 1)) begin
+                d = a - thr[31:0];
+                y = sgn * (thr + (d >>> 2));
+            end else begin
+                y = sgn * (thr + (thr >>> 2));
             end
+
+            out_sample = sat16(y);
         end
     end
 
