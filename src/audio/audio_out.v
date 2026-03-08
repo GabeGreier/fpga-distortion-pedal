@@ -1,42 +1,41 @@
 module audio_out(
     input                BCLK,        // bit clock
-    input                LRCLK,       // left/right indicator
+    input                LRCLK,       // left/right word-select clock
     input  signed [15:0] left,        // left sample
     input  signed [15:0] right,       // right sample
     output reg           DACDAT       // serial output to codec
 );
 
-    reg [15:0] shift_reg = 16'd0;
-    reg [4:0]  bit_index = 5'd0;
+    reg [15:0] shift_reg  = 16'd0;
+    reg [4:0]  bit_count  = 5'd0;
+    reg        lrclk_prev = 1'b0;
 
-    // Synchronize LRCLK into BCLK domain before edge detection.
-    reg lrclk_meta = 1'b0;
-    reg lrclk_sync = 1'b0;
-    reg lrclk_prev = 1'b0;
-
-    // Update data on BCLK falling edge so DAC sees stable value on rising edge.
+    // I2S transmit for 16-bit samples in (typical) 32-bit slots.
+    // Drive first 16 bits from sample MSB->LSB, then zero-pad remaining slot bits.
+    // Update on BCLK falling edge so codec can sample on rising edge.
     always @(negedge BCLK) begin
-        lrclk_meta <= LRCLK;
-        lrclk_sync <= lrclk_meta;
-        lrclk_prev <= lrclk_sync;
+        lrclk_prev <= LRCLK;
 
-        // Detect synchronized LRCLK rising edge (left channel)
-        if (!lrclk_prev && lrclk_sync) begin
-            shift_reg <= {left[14:0], 1'b0};
-            bit_index <= 5'd0;
-            DACDAT    <= left[15];
-        end
-        // Detect synchronized LRCLK falling edge (right channel)
-        else if (lrclk_prev && !lrclk_sync) begin
-            shift_reg <= {right[14:0], 1'b0};
-            bit_index <= 5'd0;
-            DACDAT    <= right[15];
-        end
-        // Shift out MSB first between channel boundaries.
-        else begin
+        // Word boundary: LRCLK toggled, load sample for new channel.
+        if (LRCLK != lrclk_prev) begin
+            bit_count <= 5'd0;
+
+            // Keep existing channel polarity used elsewhere in this project:
+            // LRCLK=1 => left, LRCLK=0 => right.
+            if (LRCLK)
+                shift_reg <= left;
+            else
+                shift_reg <= right;
+
+            // I2S timing: WS toggles one bit before MSB.
+            // Keep output low in this boundary bit period.
+            DACDAT <= 1'b0;
+        end else if (bit_count < 5'd16) begin
             DACDAT    <= shift_reg[15];
             shift_reg <= {shift_reg[14:0], 1'b0};
-            bit_index <= bit_index + 5'd1;
+            bit_count <= bit_count + 5'd1;
+        end else begin
+            DACDAT <= 1'b0;
         end
     end
 
