@@ -27,7 +27,9 @@ module audio_out(
             else
                 shift_reg <= right;
 
-            DACDAT <= LRCLK ? left[15] : right[15];
+            // I2S timing: WS toggles one bit before MSB.
+            // Keep output low in this boundary bit period.
+            DACDAT <= 1'b0;
         end else if (bit_count < 5'd16) begin
             DACDAT    <= shift_reg[15];
             shift_reg <= {shift_reg[14:0], 1'b0};
