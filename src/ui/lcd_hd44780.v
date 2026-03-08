@@ -80,7 +80,7 @@ module lcd_hd44780 (
             end else begin
                 // Line 2: "MODE: ______     "
                 // idx 16..31 -> position 0..15
-                case (idx - 16)
+                case (idx[3:0])
                     0: char_at = "M";
                     1: char_at = "O";
                     2: char_at = "D";

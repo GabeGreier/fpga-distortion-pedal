@@ -46,9 +46,9 @@ module wm8731_config(
         // Power down control: all ON (0)
         rom[1]  = {7'h06, 9'h000};
 
-        // Line input volumes (adjust later by ear)
-        rom[2]  = {7'h00, 9'h017};   // Left Line In  (0x17)
-        rom[3]  = {7'h01, 9'h017};   // Right Line In (0x17)
+        // Line input volumes: moderate level to keep dynamics while avoiding hard clipping.
+        rom[2]  = {7'h00, 9'h012};   // Left Line In
+        rom[3]  = {7'h01, 9'h012};   // Right Line In
 
         // Headphone/line out volume
         rom[4]  = {7'h02, 9'h079};   // Left HP Out
@@ -99,7 +99,7 @@ module wm8731_config(
     reg [7:0] tx_byte;
     reg [2:0] bit_idx;       // 7..0
 
-    reg ack_bit;             // sampled ACK (0 expected)
+    reg nack_seen;           // flag any NACK during current register write
 
     // startup delay so codec powers up before first I2C transaction
     reg [19:0] startup_cnt;
@@ -124,7 +124,7 @@ module wm8731_config(
             byte_idx       <= 2'd0;
             bit_idx        <= 3'd7;
             tx_byte        <= 8'h00;
-            ack_bit        <= 1'b1;
+            nack_seen      <= 1'b0;
 
             startup_cnt    <= 20'd0;
         end else begin
@@ -158,6 +158,7 @@ module wm8731_config(
                         I2C_SCLK      <= 1'b1;
                         sda_drive_low <= 1'b1;   // pull SDA low = START
                         byte_idx      <= 2'd0;
+                        nack_seen     <= 1'b0;
                         state         <= ST_LOAD_BYTE;
                     end
 
@@ -214,10 +215,11 @@ module wm8731_config(
                     // Raise SCL high and sample ACK
                     ST_ACK_HIGH: begin
                         I2C_SCLK <= 1'b1;
-                        ack_bit  <= sda_in; // ACK should be 0
-
-                        // move to next byte or stop
-                        if (byte_idx == 2'd2) begin
+                        if (sda_in == 1'b1) begin
+                            // NACK: abort this transfer and retry this register
+                            nack_seen <= 1'b1;
+                            state     <= ST_STOP_A;
+                        end else if (byte_idx == 2'd2) begin
                             state <= ST_STOP_A;
                         end else begin
                             byte_idx <= byte_idx + 2'd1;
@@ -241,7 +243,11 @@ module wm8731_config(
 
                     // Next register
                     ST_NEXT: begin
-                        if (reg_idx == (NREG-1)) begin
+                        if (nack_seen) begin
+                            // Retry same register until it ACKs.
+                            byte_idx <= 2'd0;
+                            state    <= ST_START_A;
+                        end else if (reg_idx == (NREG-1)) begin
                             state <= ST_DONE;
                         end else begin
                             reg_idx  <= reg_idx + 4'd1;
