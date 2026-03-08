@@ -34,7 +34,7 @@ module distortion (
             if (x > 32'sd32767)
                 sat16 = 16'sd32767;
             else if (x < -32'sd32768)
-                sat16 = -16'sd32768;
+                sat16 = 16'sh8000;
             else
                 sat16 = x[15:0];
         end
