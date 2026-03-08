@@ -1,22 +1,18 @@
 // ================================================
-// FPGA Distortion Pedal Top Module
-// Board: Terrasic DE2-115
-//
-// Purpose:
-// - Pull in stereo audio samples from the WM8731 codec
-// - Select a mode using SW[1:0] (00 clean, 01 light, 10 normnal, 11 heavy)
-// - Apply distortion effect using a piecewise non linear, to both left/right samples
-// - Display project name + current mode on the LCD
-//
+// FPGA Distortion block
+// - Mode 00: clean passthrough with light noise gate
+// - Mode 01: light soft clip
+// - Mode 10: normal clip
+// - Mode 11: heavy clip
 // ================================================
 
 module distortion (
-    input wire signed [15:0] in_sample,
-    input wire [1:0] mode,
-    output reg signed [15:0] out_sample
+    input  wire signed [15:0] in_sample,
+    input  wire [1:0]         mode,
+    output reg  signed [15:0] out_sample
 );
 
-    // Fixed: abs32 function input should be 32-bit signed, not 16-bit
+    // |x| helper
     function signed [31:0] abs32;
         input signed [31:0] x;
         begin
@@ -27,7 +23,7 @@ module distortion (
         end
     endfunction
 
-    // Helper function: saturate signed 32 bit to signed 16 bit
+    // Saturate 32-bit signed to 16-bit signed
     function signed [15:0] sat16;
         input signed [31:0] x;
         begin
@@ -40,86 +36,80 @@ module distortion (
         end
     endfunction
 
-    // Internal reg for intermediate values
-    reg signed [31:0] x_pre;     // pre-gain sample (wide)
-    reg signed [31:0] y_shape;   // after piecewise shaping (wide)
+    // Processing temps
+    reg signed [31:0] x;          // widened input
+    reg signed [31:0] x_gain;     // pre-gain sample
+    reg signed [31:0] y;          // shaped sample
+    reg signed [31:0] thr;        // clip threshold
+    reg signed [31:0] sgn;
+    reg [31:0]        a;
+    reg [31:0]        d;
 
-    reg [31:0]        a;         // abs(x_pre)
-    reg signed [31:0] sgn;       // +1 or -1 as 32-bit signed
-    reg signed [31:0] thr;       // threshold T (positive)
-    reg signed [31:0] two_thr;   // 2T
-
-    // Region math temps
-    reg [31:0] delta;
+    localparam signed [31:0] NOISE_GATE = 32'sd96;
 
     always @(*) begin
+        x      = {{16{in_sample[15]}}, in_sample};
+        x_gain = 32'sd0;
+        y      = 32'sd0;
+        thr    = 32'sd32767;
+        sgn    = 32'sd1;
+        a      = 32'd0;
+        d      = 32'd0;
 
-        x_pre = 32'sd0;
-        y_shape = 32'sd0;
-        a = 32'd0;
-        sgn       = 32'sd1;
-        thr       = 32'sd20000;
-        two_thr   = 32'sd40000;
-        delta     = 32'd0;
-        
+        // Small noise gate to suppress idle hiss/static floor.
+        if (abs32(x) < NOISE_GATE) begin
+            out_sample = 16'sd0;
+        end else begin
 
-        // Pre gain
-        case (mode)
-            2'b00: begin
-                x_pre = {{16{in_sample[15]}}, in_sample}; // sign-extend to 32-bit
-                thr   = 32'sd32767; // no clipping
+            case (mode)
+                // CLEAN
+                2'b00: begin
+                    x_gain = x;
+                    thr    = 32'sd32767;
+                end
+
+                // LIGHT: ~2x pre-gain, gentle soft clip
+                2'b01: begin
+                    x_gain = x <<< 1;
+                    thr    = 32'sd18000;
+                end
+
+                // NORMAL: ~4x pre-gain, medium clip
+                2'b10: begin
+                    x_gain = x <<< 2;
+                    thr    = 32'sd12000;
+                end
+
+                // HEAVY: ~8x pre-gain, aggressive clip
+                default: begin
+                    x_gain = x <<< 3;
+                    thr    = 32'sd7000;
+                end
+            endcase
+
+            if (x_gain < 0)
+                sgn = -32'sd1;
+            else
+                sgn = 32'sd1;
+
+            a = abs32(x_gain);
+
+            if (mode == 2'b00) begin
+                y = x_gain;
+            end else if (a <= thr[31:0]) begin
+                // Region 1: linear
+                y = x_gain;
+            end else if (a <= (thr <<< 1)) begin
+                // Region 2: soft compression
+                d = a - thr[31:0];
+                y = sgn * (thr + (d >>> 2));
+            end else begin
+                // Region 3: near hard-limit
+                y = sgn * (thr + (thr >>> 2));
             end
-            2'b01: begin
-                // Fixed: Use << (not <<<) for logical shift, sign-extend result
-                // 2x gain light clipping
-                x_pre = {{15{in_sample[15]}}, in_sample, 1'b0}; // *2
-                thr   = 32'sd20000;
-            end
-            2'b10: begin
-                // Fixed: Use << (not <<<) for logical shift, sign-extend result
-                // 4x gain more clipping
-                x_pre = {{14{in_sample[15]}}, in_sample, 2'b00}; // *4
-                thr   = 32'sd16000;
-            end
-            2'b11: begin
-                // Fixed: Use << (not <<<) for logical shift, sign-extend result
-                // 8x gain aggressive clipping
-                x_pre = {{13{in_sample[15]}}, in_sample, 3'b000}; // *8
-                thr   = 32'sd12000;
-            end
-        endcase
 
-    // Prep sign and magnitude
-    if (x_pre < 0) sgn = -32'sd1;
-    else sgn = 32'sd1;
-    a = abs32(x_pre);
-    two_thr = thr << 1; // Fixed: Use << (not <<<) for shift operation. 2 * T
-
-    // Piecewise soft clipping
-    // Region 1: |x| <= T
-    // Region 2: T < |x| <= 2T
-    // Region 3: |x| > 2T
-
-    if (mode == 2'b00) begin
-        // clean, bypass
-        y_shape = x_pre;
-    end
-    else if (a <= thr[31:0]) begin
-        // Region 1 linear
-        y_shape = x_pre;
-    end
-    else if (a <= two_thr[31:0]) begin
-        // Region 2 moderate compression
-        delta   = a - thr[31:0];
-        y_shape = sgn * (thr + (delta >> 1)); // Fixed: Use >> (not >>>) for right shift. /2
-    end
-    else begin
-        // Region 3 strong compression
-        delta   = a - two_thr[31:0];
-        y_shape = sgn * ((thr + (thr >> 1)) + (delta >> 2)); // Fixed: Use >> (not >>>) for right shift. 1.5T + (delta/4)
+            out_sample = sat16(y);
+        end
     end
 
-    // Saturate to 16 bits
-    out_sample = sat16(y_shape);
-    end
 endmodule
