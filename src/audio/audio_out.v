@@ -22,13 +22,13 @@ module audio_out(
 
         // Detect synchronized LRCLK rising edge (left channel)
         if (!lrclk_prev && lrclk_sync) begin
-            shift_reg <= left;
+            shift_reg <= {left[14:0], 1'b0};
             bit_index <= 5'd0;
             DACDAT    <= left[15];
         end
         // Detect synchronized LRCLK falling edge (right channel)
         else if (lrclk_prev && !lrclk_sync) begin
-            shift_reg <= right;
+            shift_reg <= {right[14:0], 1'b0};
             bit_index <= 5'd0;
             DACDAT    <= right[15];
         end

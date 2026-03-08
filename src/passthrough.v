@@ -28,6 +28,7 @@ module passthrough(
     // instantiate audio interface
     audio_interface audio_inst (
         .CLOCK_50(CLOCK_50),
+        .reset(1'b0),
 
         .AUD_ADCLRCK(AUD_ADCLRCK),
         .AUD_ADCDAT(AUD_ADCDAT),
